@@ -32,12 +32,12 @@ module S3AssetSync
     current_dir = "#{assets_dir}#{path}"
     Dir.foreach(current_dir) do |file|
       next if file == '.' || file == '..'
-      file_path = "#{path}/#{file}"
+      file_path = File.join(Rails.application.config.assets.prefix, path,file})
       file_key = file_path[1..-1]
       full_file_path = "#{assets_dir}#{path}/#{file}"
       
       if File.file?(full_file_path)
-        puts "SYNC: #{file_path}"
+        puts "SYNC: #{file_path} => #{file_key}"
         self.s3_upload_object(s3, file_key) unless self.s3_object_exists?(s3, file_key)
       elsif File.directory?(full_file_path)
         self.sync_directory(s3, file_path)
@@ -99,12 +99,10 @@ module S3AssetSync
   # Uploads an object to the specified S3 Bucket.
   #
   def self.s3_upload_object(client, key)
-    fn = File.join(Rails.public_path, Rails.application.config.assets.prefix, key)
+    fn = File.join(Rails.public_path, key)
 
     ext = File.extname(fn)[1..-1] #without dot
     mime = Mime::Type.lookup_by_extension(ext).to_s
-
-    key = File.join(Rails.application.config.assets.prefix, key)[1..-1]
 
     file = {
       acl: "public-read",
