@@ -38,7 +38,7 @@ module S3AssetSync
       
       if File.file?(absolute_local_file_path)
         puts "SYNC: #{file_key}"
-        # self.s3_upload_object(s3, file_key) unless self.s3_object_exists?(s3, file_key)
+        self.s3_upload_object(s3, file_key) unless self.s3_object_exists?(s3, file_key)
       elsif File.directory?(absolute_local_file_path)
         self.sync_directory(s3, relative_file_path)
       end
