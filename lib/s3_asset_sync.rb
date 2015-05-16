@@ -29,18 +29,18 @@ module S3AssetSync
   def self.sync_directory(s3, path)
     assets_dir = File.join(Rails.public_path, Rails.application.config.assets.prefix)
 
-    local_dir = "#{assets_dir}#{path}"
-    Dir.foreach(local_dir) do |rel_filename|
-      next if rel_filename == '.' || rel_filename == '..'
-      relative_file_path = "#{path}/#{rel_filename}"
-      file_key = File.join(Rails.application.config.assets.prefix,relative_file_path).sub(/^./,'')
-      absolute_local_file_path = "#{assets_dir}#{path}/#{rel_filename}"
+    current_dir = "#{assets_dir}#{path}"
+    Dir.foreach(current_dir) do |file|
+      next if file == '.' || file == '..'
+      file_path = "#{path}/#{file}"
+      file_key = file_path[1..-1]
+      full_file_path = "#{assets_dir}#{path}/#{file}"
       
-      if File.file?(absolute_local_file_path)
-        puts "SYNC: #{file_key}"
+      if File.file?(full_file_path)
+        puts "SYNC: #{file_path}"
         self.s3_upload_object(s3, file_key) unless self.s3_object_exists?(s3, file_key)
-      elsif File.directory?(absolute_local_file_path)
-        self.sync_directory(s3, relative_file_path)
+      elsif File.directory?(full_file_path)
+        self.sync_directory(s3, file_path)
       end
     end
   end
@@ -103,6 +103,8 @@ module S3AssetSync
 
     ext = File.extname(fn)[1..-1] #without dot
     mime = Mime::Type.lookup_by_extension(ext).to_s
+
+    key = File.join(Rails.application.config.assets.prefix, key)[1..-1]
 
     file = {
       acl: "public-read",
