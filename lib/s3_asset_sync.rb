@@ -100,12 +100,18 @@ module S3AssetSync
   #
   def self.s3_upload_object(client, key)
     fn = File.join(Rails.public_path, Rails.application.config.assets.prefix, key)
+
+    ext = File.extname(fn)[1..-1] #without dot
+    mime = Mime::Type.lookup_by_extension(ext).to_s
+    puts "mine for #{ext} is #{mime}"
+    puts mime
+
     file = {
       acl: "public-read",
       bucket: Rails.application.config.s3_asset_sync.s3_bucket,
       body: File.open(fn),
       key: key,
-      content_type: Mime::Type.lookup_by_extension(File.extname(fn)[1..-1])
+      content_type: mime
     }
 
     one_year = 31557600
