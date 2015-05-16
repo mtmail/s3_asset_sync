@@ -32,8 +32,8 @@ module S3AssetSync
     current_dir = "#{assets_dir}#{path}"
     Dir.foreach(current_dir) do |file|
       next if file == '.' || file == '..'
-      file_path = File.join(Rails.application.config.assets.prefix, path,file)
-      file_key = file_path[1..-1]
+      file_path = File.join(path,file)
+      file_key = File.join(Rails.application.config.assets.prefix, path,file)[1..-1]
       full_file_path = "#{assets_dir}#{path}/#{file}"
       
       if File.file?(full_file_path)
