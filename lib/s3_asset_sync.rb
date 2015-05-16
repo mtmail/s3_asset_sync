@@ -103,8 +103,6 @@ module S3AssetSync
 
     ext = File.extname(fn)[1..-1] #without dot
     mime = Mime::Type.lookup_by_extension(ext).to_s
-    puts "mine for #{ext} is #{mime}"
-    puts mime
 
     file = {
       acl: "public-read",
@@ -119,6 +117,12 @@ module S3AssetSync
       file.merge!({
         :cache_control => "public, max-age=#{one_year}",
         :expires => CGI.rfc1123_date(Time.now + one_year)
+      })
+    end
+
+    if ext == 'gz'
+      file.merge!({
+        :content_encoding => 'gzip'
       })
     end
     resp = client.put_object(file)
