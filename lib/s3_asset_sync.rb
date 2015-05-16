@@ -27,7 +27,8 @@ module S3AssetSync
   end
 
   def self.sync_directory(s3, path)
-    assets_dir = Rails.root.join('public','assets')
+    assets_dir = Rails.root.join('public').to_s + Rails.application.config.assets.prefix
+
     current_dir = "#{assets_dir}#{path}"
     Dir.foreach(current_dir) do |file|
       next if file == '.' || file == '..'
@@ -69,7 +70,8 @@ module S3AssetSync
     end
 
     keys.each do |key|
-      if !File.exists?(Rails.root.join('public', 'assets', key))
+      fn = Rails.root.join('public').to_s + Rails.application.config.assets.prefix + Pathname.new(key).to_s
+      if !File.exists?(fn)
         self.s3_delete_object(s3, key) 
         puts "DELETED: #{key}"
       end
@@ -97,10 +99,11 @@ module S3AssetSync
   # Uploads an object to the specified S3 Bucket.
   #
   def self.s3_upload_object(client, key)
+    fn = Rails.root.join('public').to_s + Rails.application.config.assets.prefix + Pathname.new(key).to_s
     resp = client.put_object(
       acl: "public-read",
       bucket: Rails.application.config.s3_asset_sync.s3_bucket,
-      body: File.open(Rails.root.join('public','assets', key)),
+      body: File.open(fn),
       key: key
     )
     puts resp
