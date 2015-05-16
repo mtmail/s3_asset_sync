@@ -27,7 +27,7 @@ module S3AssetSync
   end
 
   def self.sync_directory(s3, path)
-    assets_dir = Rails.root.join('public').to_s + Rails.application.config.assets.prefix
+    assets_dir = File.join(Rails.public_path, Rails.application.config.assets.prefix)
 
     current_dir = "#{assets_dir}#{path}"
     Dir.foreach(current_dir) do |file|
@@ -70,7 +70,7 @@ module S3AssetSync
     end
 
     keys.each do |key|
-      fn = Rails.root.join('public').to_s + Rails.application.config.assets.prefix + Pathname.new(key).to_s
+      fn = File.join(Rails.public_path, Rails.application.config.assets.prefix, key)
       if !File.exists?(fn)
         self.s3_delete_object(s3, key) 
         puts "DELETED: #{key}"
@@ -99,13 +99,23 @@ module S3AssetSync
   # Uploads an object to the specified S3 Bucket.
   #
   def self.s3_upload_object(client, key)
-    fn = Rails.root.join('public').to_s + Rails.application.config.assets.prefix + Pathname.new(key).to_s
-    resp = client.put_object(
+    fn = File.join(Rails.public_path, Rails.application.config.assets.prefix, key)
+    file = {
       acl: "public-read",
       bucket: Rails.application.config.s3_asset_sync.s3_bucket,
       body: File.open(fn),
-      key: key
-    )
+      key: key,
+      content_type: Mime::Type.lookup_by_extension(File.extname(fn)[1..-1])
+    }
+
+    one_year = 31557600
+    if /-[0-9a-fA-F]{32}$/.match(File.basename(fn,File.extname(fn)))
+      file.merge!({
+        :cache_control => "public, max-age=#{one_year}",
+        :expires => CGI.rfc1123_date(Time.now + one_year)
+      })
+    end
+    resp = client.put_object(file)
     puts resp
   end
 
