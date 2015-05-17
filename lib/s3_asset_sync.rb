@@ -37,7 +37,7 @@ module S3AssetSync
       full_file_path = "#{assets_dir}#{path}/#{file}"
       
       if File.file?(full_file_path)
-        puts "SYNC: #{file_path} => #{file_key}"
+        puts "SYNC: #{file_path}"
         self.s3_upload_object(s3, file_key) unless self.s3_object_exists?(s3, file_key)
       elsif File.directory?(full_file_path)
         self.sync_directory(s3, file_path)
@@ -101,8 +101,8 @@ module S3AssetSync
   def self.s3_upload_object(client, key)
     fn = File.join(Rails.public_path, key)
 
-    ext = File.extname(fn)[1..-1] #without dot
-    mime = Mime::Type.lookup_by_extension(ext).to_s
+    ext = File.extname(fn)[1..-1] # e.g. "gif"
+    mime = Mime::Type.lookup_by_extension(ext).to_s # unknown type will be ""
 
     file = {
       acl: "public-read",
@@ -112,6 +112,7 @@ module S3AssetSync
       content_type: mime
     }
 
+    # ported from rumblelabs/asset_sync repository
     one_year = 31557600
     if /-[0-9a-fA-F]{32}$/.match(File.basename(fn,File.extname(fn)))
       file.merge!({
